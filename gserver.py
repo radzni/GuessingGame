@@ -1,47 +1,49 @@
 import socket
-import random 
 
-host = "0.0.0.0"
+host = "localhost"
 port = 7777
-banner = """
-== Guessing Game v1.0 ==
-Enter your guess:"""
 
-def generate_random_int(low, high):
-    return random.randint(low, high)
+def play_game(s):
+    while True:
+        try:
+            # received the banner
+            data = s.recv(1024)
+            # print banner
+            print(data.decode().strip())
+
+            # Ask the user to choose the difficulty level
+            difficulty = input("Choose the difficulty level (a/b/c): ").strip()
+            s.sendall(difficulty.encode())
+
+            while True:
+                # Get the user's guess input
+                user_input = input("").strip()
+
+                s.sendall(user_input.encode())
+                reply = s.recv(1024).decode().strip()
+                if "Correct" in reply:
+                    print(reply)
+                    break
+                print(reply)
+                continue
+            
+            play_again = input("Do you want to choose difficulty and play again? (yes/no): ").lower()
+            if play_again != 'yes':
+                break
+
+        except ConnectionAbortedError:
+            print("Connection closed by server.")
+            break
 
 # initialize the socket object
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((host, port))
-s.listen(5)
+s = socket.socket()
+s.connect((host, port))
 
-print(f"server is listening in port {port}")
-guessme = 0
-conn = None
+
 while True:
-    if conn is None:
-        print("waiting for connection..")
-        conn, addr = s.accept()
-        guessme = generate_random_int(1,100)
-        print(f"new client: {addr[0]}")
-        # cheat_str = f"==== number to guess is {guessme} \n" + banner 
-        # conn.sendall(cheat_str.encode())
-        conn.sendall(banner.encode())
-    else:
-        client_input = conn.recv(1024)
-        guess = int(client_input.decode().strip())
-        print(f"User guess attempt: {guess}")
-        if guess == guessme:
-            conn.sendall(b"Correct Answer!")
-            conn.close()
-            conn = None
-            continue
-        elif guess > guessme:
-            conn.sendall(b"Guess Lower!\nenter guess: ")
-            continue
-        elif guess < guessme:
-            conn.sendall(b"Guess Higher!\nenter guess:")
-            continue
-
-
-
+    play_game(s)
+    play_again = input("Ya sure? (yes/no): ").lower()
+    if play_again == 'yes':
+        break
+    
+s.close()
