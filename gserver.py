@@ -95,15 +95,7 @@ def handle_client(conn, addr):
     finally:
          conn.close()
       
-def display_leaderboard():
-    global leaderboard
-    print("\n== Leaderboard ==\n")
-    for i, player in enumerate(sorted(leaderboard, key=lambda x: x['score'], reverse=True), start=1):
-        print(f"Rank {i}:")
-        print(f"Name: {player['name']}")
-        print(f"Score: {player['score']}")
-        print(f"Difficulty: {player['difficulty']}")
-        print(f"Tries: {player['tries']}\n")
+
     
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((host, port))
