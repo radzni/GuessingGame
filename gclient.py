@@ -1,7 +1,7 @@
 import socket
 import json
 
-host = "localhost"
+host = "127.0.0.1"
 port = 7777
 
 def play_game():
@@ -47,5 +47,5 @@ while True:
             print(f"Player: {key}")
             print(f"Difficulty: {value['difficulty']}")
             print(f"Score: {value['score']}")
-            print()
+            print(f"tries: {value['tries']}\n")
         break
