@@ -1,60 +1,51 @@
 import socket
-import random 
+import json
 
-host = "0.0.0.0"
+host = "localhost"
 port = 7777
-banner = """
-== Guessing Game v1.0 ==
-Choose the difficulty level:
-a. Easy (1-50)
-b. Medium (1-100)
-c. Hard (1-500)
-Enter your choice:"""
 
-def generate_random_int(difficulty):
-    if difficulty == 'a':
-        return random.randint(1, 50)
-    elif difficulty == 'b':
-        return random.randint(1, 100)
-    elif difficulty == 'c':
-        return random.randint(1, 500)
+def play_game():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host, port))
 
-# Initialize the socket object
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((host, port))
-s.listen(5)
+    data = s.recv(1024)
+    print("\n== GuessingGameV2 ==\n")
+    print(data.decode().strip())
 
-print(f"server is listening in port {port}")
+    while True:
+        user_input = input("Enter Here: ").strip()
+        s.sendall(user_input.encode())
+        
+        print()
+        reply = s.recv(1024).decode().strip()
+        
+        if "Correct" in reply:
+            print(reply)
+            s.close()  
+            return
+        
+        print(reply)
+
+def load_user_data():
+    try:
+        with open("users.json", 'r') as file:
+            data = file.read()
+            if data:
+                return json.loads(data)
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return {}
 
 while True:
-    guessme = 0
-    conn = None
-    while True:
-        if conn is None:
-            print("waiting for connection..")
-            conn, addr = s.accept()
-            print(f"new client: {addr[0]}")
-        conn.sendall(banner.encode())
-        client_input = conn.recv(1024)
-        difficulty = client_input.decode().strip()
-        guessme = generate_random_int(difficulty)
-        print(f"Selected difficulty: {difficulty}")
-        conn.sendall(b"Let's start guessing!\nEnter your guess: ")
-
-        while True:
-            client_input = conn.recv(1024)
-            guess = int(client_input.decode().strip())
-            print(f"User guess attempt: {guess}")
-            if guess == guessme:
-                conn.sendall(b"Correct Answer!")
-                break
-            elif guess > guessme:
-                conn.sendall(b"Guess Lower!\nEnter guess: ")
-            elif guess < guessme:
-                conn.sendall(b"Guess Higher!\nEnter guess:")
-
-    play_again = input("Do you want to play again? (yes/no): ").lower()
-    if play_again != 'yes':
+    play_game()
+    repeat = input("\nWant to play another round? (y/n): ").strip().lower()
+    if repeat != 'y':
+        user_data = load_user_data()
+        print("\n== Loaded User Data ==\n")
+        sorted_user_data = sorted(user_data.items(), key=lambda x: (x[1]['difficulty'], x[1]['score']), reverse=True)
+        for key, value in sorted_user_data:
+            print(f"Player: {key}")
+            print(f"Difficulty: {value['difficulty']}")
+            print(f"Score: {value['score']}")
+            print()
         break
-
-s.close()
